@@ -104,46 +104,59 @@ EXAMPLES:
 
 **The key:** If you're teaching developers something useful about AI/coding → OK. If you're selling a corporate product → Transform or skip.
 
-Source Content (Use ONLY for inspiration - DO NOT copy or promote):
+Source Content (Use this as the basis for your posts - be SPECIFIC about the news/story):
 Title: ${content.title}
 Content: ${content.content?.slice(0, 1500)}
 
 Tone: ${tone}
 
-Create EDUCATIONAL posts about technology concepts (NOT product promotions):
+Create posts that discuss SPECIFIC industry news, trends, and developments with a developer's perspective:
+
+IMPORTANT: Use the ACTUAL content from the source! If it's about:
+- James Cameron discussing AI actors → Discuss that specific story and its implications
+- A new AI model release → Discuss that specific model and what it means
+- An AI startup raising funds → Discuss that specific development and the trend
+- A technical breakthrough → Discuss that specific breakthrough
+
+DON'T be generic! Use the real news story as your hook, then add developer insights.
 
 1. TWITTER POST (Under 280 characters)
-   - Share 1 insight about an AI/tech CAPABILITY or PATTERN
-   - Discuss CONCEPTS, not specific products
+   - Lead with the SPECIFIC news/story from the source content
+   - Add your take on what this means for developers/tech
    - Thought-provoking and educational
    - Use 1-2 emojis maximum
    - NO hashtags
    - NO extra line breaks (single paragraph)
 
 2. TWITTER THREAD (5-7 tweets)
-   - Explain a technology concept, pattern, or developer insight
-   - Each tweet: one specific point about capabilities/implications
+   - Start with the SPECIFIC news/development from source
+   - Each tweet: unpack different angles and implications
+   - Connect to developer experience and industry trends
    - Educational and thoughtful
    - Format: Tweet 1 | Tweet 2 | Tweet 3... (separated by |)
 
 3. LINKEDIN POST (120-180 words)
-   - Start with an observation about a technology CATEGORY or CAPABILITY
-   - Discuss what this means for developers/builders
-   - Focus on PATTERNS and POSSIBILITIES, not products
-   - NEVER mention specific company products (AWS X, Google Y, etc.)
+   - Open with the SPECIFIC news/story from the source (be concrete!)
+   - Discuss what this means for developers, the industry, or AI progress
+   - Connect to broader trends and patterns
+   - Can mention AI models (GPT, Claude, Gemini) and dev tools
+   - NEVER mention corporate SaaS products (AWS services, Azure products, etc.)
    - Write in flowing paragraphs with NO line breaks between sentences
    - End with a thought-provoking question
-   - Add 3-4 generic tech hashtags at the very end (e.g., #AI #Development #Coding)
+   - Add 3-4 generic tech hashtags at the very end (e.g., #AI #Development #Technology)
    - CRITICAL: The entire post should flow naturally with NO extra line breaks
 
-GOOD EXAMPLES:
+GOOD EXAMPLES (Notice how they reference SPECIFIC news/developments):
+
+✅ "James Cameron just said AI creating actor performances from text prompts is 'horrifying' to him. As someone building with AI daily, I get both sides - the creative possibilities are immense, but so are the ethical questions. Where do we draw the line between tool and replacement?"
+
+✅ "Iambic just raised $100M for AI-driven drug discovery after promising cancer drug results. The same pattern-recognition that powers code completion is now identifying molecular structures. AI's impact is spreading way beyond coding - what other fields are next?"
+
 ✅ "Claude 3.5's code understanding is at a point where it can refactor entire modules while maintaining your architectural patterns. I'm seeing it suggest changes that I would have made myself. Where does this lead?"
 
 ✅ "GitHub Copilot now understands project context beyond the current file. It's suggesting patterns that match my codebase architecture. This is a fundamental shift from autocomplete to understanding intent."
 
-✅ "GPT-4's reasoning is getting eerily good at debugging. It can trace logic errors across multiple files and explain not just what's wrong, but why the bug exists. This changes how we think about debugging workflows."
-
-✅ "AI code assistants are moving from 'complete this line' to 'understand this architecture'. The question isn't if they'll understand our codebases - it's when they'll understand them better than we do."
+✅ "New research shows AI models can now trace dependencies across dozens of files and suggest refactorings that actually make sense. This isn't autocomplete anymore - it's architectural understanding. How long until AI understands our codebases better than we do?"
 
 BAD EXAMPLES (AVOID):
 ❌ "Amazon Connect just added agentic capabilities..." (Corporate SaaS product, sounds like marketing)
