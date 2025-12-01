@@ -124,18 +124,31 @@ export async function fetchContent(topics) {
   
   console.log(`📦 Fetched ${allContent.length} raw content items`);
   
-  // AI-powered filtering: Let AI decide which articles are relevant
-  console.log(`🤖 AI is evaluating content relevance...`);
-  const filteredContent = [];
+  // TEMPORARY: Disable AI filtering to save tokens (keyword filtering instead)
+  console.log(`🔍 Filtering content with keyword matching (AI filtering disabled to save tokens)...`);
   
-  for (const item of allContent) {
-    const isRelevant = await isArticleRelevant(item);
-    if (isRelevant) {
-      filteredContent.push(item);
+  const filteredContent = allContent.filter(item => {
+    const text = `${item.title} ${item.content || ''}`.toLowerCase();
+    
+    // Filter out political/religious/gaming content
+    const bannedKeywords = [
+      'trump', 'biden', 'president', 'election', 'political', 'politics', 
+      'china', 'russia', 'ukraine', 'military', 'war', 'geopolitical',
+      'bible', 'church', 'religion', 'prayer',
+      'playstation', 'xbox', 'nintendo', 'gaming',
+      'sports', 'football', 'basketball'
+    ];
+    
+    if (bannedKeywords.some(keyword => text.includes(keyword))) {
+      console.log(`🚫 Keyword filtered: ${item.title}`);
+      return false;
     }
-  }
+    
+    console.log(`✅ Approved: ${item.title}`);
+    return true;
+  });
   
-  console.log(`✅ AI approved ${filteredContent.length}/${allContent.length} content items`);
+  console.log(`✅ Approved ${filteredContent.length}/${allContent.length} content items`);
   return filteredContent;
 }
 

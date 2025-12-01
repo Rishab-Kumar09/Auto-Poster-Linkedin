@@ -38,8 +38,26 @@ exports.handler = async (event, context) => {
     
     for (let i = 0; i < postsToGenerate; i++) {
       try {
-        console.log(`🤖 Generating posts with GROQ for content #${i + 1}/${postsToGenerate}...`);
-        const generated = await generatePosts(content[i], 'groq', 'professional');
+        let generated = null;
+        
+        // Try Groq first
+        try {
+          console.log(`🤖 Trying GROQ for content #${i + 1}/${postsToGenerate}...`);
+          generated = await generatePosts(content[i], 'groq', 'professional');
+        } catch (groqErr) {
+          // If Groq fails with rate limit, try OpenAI
+          if (groqErr.message && groqErr.message.includes('rate_limit')) {
+            console.warn(`⚠️  Groq rate limited, falling back to OpenAI...`);
+            try {
+              generated = await generatePosts(content[i], 'openai', 'professional');
+            } catch (openaiErr) {
+              console.error(`❌ OpenAI also failed:`, openaiErr.message);
+              throw new Error('Both Groq and OpenAI failed');
+            }
+          } else {
+            throw groqErr; // Re-throw if not rate limit
+          }
+        }
         
         if (!generated || !generated.linkedin || !generated.linkedin.post) {
           console.error(`❌ Generated post #${i + 1} has invalid structure:`, JSON.stringify(generated));
@@ -57,7 +75,7 @@ exports.handler = async (event, context) => {
         allPosts.push(linkedinPost);
         console.log(`✅ Post #${i + 1} generated successfully`);
       } catch (err) {
-        console.error(`❌ Error generating post #${i + 1}:`, err.message, err.stack);
+        console.error(`❌ Error generating post #${i + 1}:`, err.message);
         // Continue with next post instead of failing entirely
       }
     }

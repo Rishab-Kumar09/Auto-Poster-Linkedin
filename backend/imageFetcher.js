@@ -260,16 +260,11 @@ export async function fetchImage(topic, postText = null) {
     let isSpecificTool = false;
     
     if (postText) {
-      // Try AI-powered analysis first (SMART!)
-      const aiQuery = await analyzePostForImageSearchAI(postText);
-      if (aiQuery) {
-        searchQuery = aiQuery;
-      } else {
-        // Fall back to pattern matching
-        searchQuery = analyzePostForImageSearch(postText);
-      }
+      // TEMPORARY: Disable AI image analysis to save tokens
+      // Use pattern matching instead
+      searchQuery = analyzePostForImageSearch(postText);
       
-      console.log(`🔍 Smart search query: "${searchQuery}"`);
+      console.log(`🔍 Search query (pattern-based): "${searchQuery}"`);
       console.log(`📝 Post preview: ${postText.slice(0, 100)}...`);
       
       // Check if this is a specific AI tool/model
