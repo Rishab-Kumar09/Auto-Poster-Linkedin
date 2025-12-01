@@ -1,8 +1,8 @@
 // Netlify Scheduled Function: Fetch Content (Every 6 hours)
-const { fetchContent } = require('../../backend/contentFetcher');
-const { generatePosts } = require('../../backend/aiGenerator');
-const { fetchImage } = require('../../backend/imageFetcher');
-const db = require('../../backend/database');
+const { fetchContent } = require('../../../backend/contentFetcher');
+const { generatePosts } = require('../../../backend/aiGenerator');
+const { fetchImage } = require('../../../backend/imageFetcher');
+const { insertPost } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   console.log('🔄 Scheduled: Fetching content...');
@@ -42,14 +42,15 @@ exports.handler = async (event, context) => {
     console.log('✅ Images fetched');
 
     // Store posts in database
-    const insertStmt = db.prepare(`
-      INSERT INTO posts (platform, content, status, image_url, image_data)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
     const status = autoPost ? 'pending' : 'draft';
     for (const post of posts) {
-      insertStmt.run(post.platform, post.content, status, post.image_url, post.image_data);
+      await insertPost(
+        post.platform,
+        post.content,
+        status,
+        post.image_url,
+        post.image_data
+      );
     }
 
     console.log(`✅ ${posts.length} posts saved to database with status: ${status}`);

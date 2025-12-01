@@ -1,6 +1,6 @@
 // Netlify Scheduled Function: Auto-Post (8am)
-const { postToLinkedIn, postToX } = require('../../backend/autoPost');
-const db = require('../../backend/database');
+const { postToLinkedIn, postToX } = require('../../../backend/autoPost');
+const { getPostsByStatus, updatePostStatus } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   console.log('📤 Scheduled: Auto-posting (8am slot)...');
@@ -23,9 +23,8 @@ exports.handler = async (event, context) => {
     // Get one pending post for each platform
     let posted = 0;
     for (const platform of platforms) {
-      const post = db.prepare(
-        'SELECT * FROM posts WHERE platform = ? AND status = ? ORDER BY created_at ASC LIMIT 1'
-      ).get(platform, 'pending');
+      const posts = await getPostsByStatus('pending');
+      const post = posts.find(p => p.platform === platform);
 
       if (!post) {
         console.log(`⚠️ No pending posts for ${platform}`);
@@ -52,8 +51,7 @@ exports.handler = async (event, context) => {
         }
 
         // Update post status
-        db.prepare('UPDATE posts SET status = ?, posted_at = CURRENT_TIMESTAMP WHERE id = ?')
-          .run('posted', post.id);
+        await updatePostStatus(post.id, 'posted');
 
         console.log(`✅ Posted to ${platform}: Post ID ${post.id}`);
         posted++;

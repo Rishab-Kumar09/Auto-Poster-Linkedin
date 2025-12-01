@@ -1,5 +1,5 @@
 // Netlify Function: Delete Post
-const db = require('../../backend/database');
+const { deletePost } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -33,15 +33,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const result = db.prepare('DELETE FROM posts WHERE id = ?').run(parseInt(postId));
-
-    if (result.changes === 0) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: 'Post not found' })
-      };
-    }
+    await deletePost(parseInt(postId));
 
     return {
       statusCode: 200,

@@ -1,5 +1,5 @@
 // Netlify Function: Get Posts
-const db = require('../../backend/database');
+const { getAllPosts } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -21,7 +21,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const posts = db.prepare('SELECT * FROM posts ORDER BY created_at DESC').all();
+    const posts = await getAllPosts();
     
     return {
       statusCode: 200,

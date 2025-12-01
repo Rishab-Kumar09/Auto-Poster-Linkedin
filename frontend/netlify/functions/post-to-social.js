@@ -1,6 +1,6 @@
 // Netlify Function: Post to Social Media
-const { postToLinkedIn, postToX } = require('../../backend/autoPost');
-const db = require('../../backend/database');
+const { postToLinkedIn, postToX } = require('../../../backend/autoPost');
+const { getPostById, updatePostStatus } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -25,7 +25,7 @@ exports.handler = async (event, context) => {
     const { postId } = JSON.parse(event.body);
 
     // Get post from database
-    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    const post = await getPostById(postId);
     
     if (!post) {
       return {
@@ -56,8 +56,7 @@ exports.handler = async (event, context) => {
     }
 
     // Update post status
-    db.prepare('UPDATE posts SET status = ?, posted_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run('posted', postId);
+    await updatePostStatus(postId, 'posted');
 
     return {
       statusCode: 200,

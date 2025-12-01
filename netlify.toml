@@ -13,8 +13,8 @@
 # Functions configuration
 [functions]
   directory = "netlify/functions"
-  node_bundler = "nft"
-  included_files = ["../backend/**", "../node_modules/**"]
+  node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js", "groq-sdk", "openai", "@google/generative-ai"]
 
 # Redirects for API calls
 [[redirects]]

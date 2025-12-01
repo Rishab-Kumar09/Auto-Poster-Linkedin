@@ -1,8 +1,8 @@
 // Netlify Function: Generate Posts
-const { fetchContent } = require('../../backend/contentFetcher');
-const { generatePosts } = require('../../backend/aiGenerator');
-const { fetchImage } = require('../../backend/imageFetcher');
-const db = require('../../backend/database');
+const { fetchContent } = require('../../../backend/contentFetcher');
+const { generatePosts } = require('../../../backend/aiGenerator');
+const { fetchImage } = require('../../../backend/imageFetcher');
+const { insertPost } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   // CORS headers
@@ -49,13 +49,14 @@ exports.handler = async (event, context) => {
     }
 
     // Store posts in database
-    const insertStmt = db.prepare(`
-      INSERT INTO posts (platform, content, status, image_url, image_data)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
     for (const post of posts) {
-      insertStmt.run(post.platform, post.content, 'pending', post.image_url, post.image_data);
+      await insertPost(
+        post.platform,
+        post.content,
+        'pending',
+        post.image_url,
+        post.image_data
+      );
     }
 
     return {

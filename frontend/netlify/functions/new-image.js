@@ -1,6 +1,6 @@
 // Netlify Function: Get New Image for Post
-const { fetchImage } = require('../../backend/imageFetcher');
-const db = require('../../backend/database');
+const { fetchImage } = require('../../../backend/imageFetcher');
+const { getPostById, updatePostImage } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -35,7 +35,7 @@ exports.handler = async (event, context) => {
     }
 
     // Get post from database
-    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(parseInt(postId));
+    const post = await getPostById(parseInt(postId));
     
     if (!post) {
       return {
@@ -49,8 +49,7 @@ exports.handler = async (event, context) => {
     const imageData = await fetchImage(post.content);
 
     // Update post with new image
-    db.prepare('UPDATE posts SET image_url = ?, image_data = ? WHERE id = ?')
-      .run(imageData.url, JSON.stringify(imageData), parseInt(postId));
+    await updatePostImage(parseInt(postId), imageData.url, JSON.stringify(imageData));
 
     return {
       statusCode: 200,
