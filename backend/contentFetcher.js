@@ -42,17 +42,7 @@ export async function fetchContent(topics) {
     }
   }
   
-  // Cache content in database
-  const db = getDatabase();
-  const stmt = db.prepare(`
-    INSERT OR IGNORE INTO content_cache (source, topic, url, title, content)
-    VALUES (?, ?, ?, ?, ?)
-  `);
-  
-  allContent.forEach(item => {
-    stmt.run(item.source, item.topic, item.url, item.title, item.content);
-  });
-  
+  // No caching needed - posts stored in Supabase by calling functions
   console.log(`✅ Fetched ${allContent.length} content items`);
   return allContent;
 }
