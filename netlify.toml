@@ -12,9 +12,9 @@
 
 # Functions configuration
 [functions]
-  directory = "netlify/functions"
+  directory = "frontend/netlify/functions"
   node_bundler = "esbuild"
-  included_files = ["backend/**"]
+  included_files = ["../backend/**"]
 
 # Scheduled Functions (Cron Jobs)
 # Fetch content every 6 hours
