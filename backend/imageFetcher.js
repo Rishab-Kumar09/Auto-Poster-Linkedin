@@ -102,54 +102,53 @@ function analyzePostForImageSearch(postText) {
 }
 
 /**
- * Search for images using Bing Image Search API (better for product images)
+ * Search for images using Google Custom Search API (better for product images)
  * @param {string} query - Search query
  * @returns {Promise<Object>} Image data or null
  */
-async function searchBingImages(query) {
-  if (!process.env.BING_IMAGE_SEARCH_KEY) {
+async function searchGoogleImages(query) {
+  if (!process.env.GOOGLE_SEARCH_API_KEY || !process.env.GOOGLE_SEARCH_ENGINE_ID) {
     return null; // Fallback to Unsplash
   }
   
   try {
-    const response = await axios.get('https://api.bing.microsoft.com/v7.0/images/search', {
+    const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
       params: {
+        key: process.env.GOOGLE_SEARCH_API_KEY,
+        cx: process.env.GOOGLE_SEARCH_ENGINE_ID,
         q: query,
-        count: 10,
-        imageType: 'Photo',
-        license: 'Any', // Get any license type for variety
-        safeSearch: 'Strict'
-      },
-      headers: {
-        'Ocp-Apim-Subscription-Key': process.env.BING_IMAGE_SEARCH_KEY
+        searchType: 'image',
+        num: 10,
+        safe: 'active',
+        imgSize: 'large'
       }
     });
     
-    if (response.data.value && response.data.value.length > 0) {
+    if (response.data.items && response.data.items.length > 0) {
       // Pick a random from top 5 results for variety
-      const topResults = response.data.value.slice(0, 5);
+      const topResults = response.data.items.slice(0, 5);
       const randomIndex = Math.floor(Math.random() * topResults.length);
       const image = topResults[randomIndex];
       
       // Filter out duplicate images
-      if (!usedImages.has(image.contentUrl)) {
-        usedImages.add(image.contentUrl);
+      if (!usedImages.has(image.link)) {
+        usedImages.add(image.link);
         
-        console.log(`✅ Bing image found: ${image.name}`);
+        console.log(`✅ Google image found: ${image.title}`);
         
         return {
-          url: image.contentUrl,
-          downloadUrl: image.contentUrl,
-          photographer: image.hostPageDisplayUrl || 'Web',
-          photographerUrl: image.hostPageUrl,
-          description: image.name
+          url: image.link,
+          downloadUrl: image.link,
+          photographer: image.displayLink || 'Web',
+          photographerUrl: image.image.contextLink,
+          description: image.title
         };
       }
     }
     
     return null;
   } catch (error) {
-    console.warn('Bing Image Search failed:', error.message);
+    console.warn('Google Image Search failed:', error.message);
     return null; // Fallback to Unsplash
   }
 }
@@ -180,14 +179,14 @@ export async function fetchImage(topic, postText = null) {
       usesBingForSpecificTool = specificToolPatterns.some(pattern => pattern.test(postText));
     }
     
-    // Try Bing first if it's a specific tool AND we have Bing API key
-    if (usesBingForSpecificTool && process.env.BING_IMAGE_SEARCH_KEY) {
-      console.log('🔎 Using Bing Image Search for specific tool/product...');
-      const bingResult = await searchBingImages(searchQuery);
-      if (bingResult) {
-        return bingResult;
+    // Try Google first if it's a specific tool AND we have Google API key
+    if (usesBingForSpecificTool && process.env.GOOGLE_SEARCH_API_KEY) {
+      console.log('🔎 Using Google Image Search for specific tool/product...');
+      const googleResult = await searchGoogleImages(searchQuery);
+      if (googleResult) {
+        return googleResult;
       }
-      console.log('⚠️ Bing search failed, falling back to Unsplash...');
+      console.log('⚠️ Google search failed, falling back to Unsplash...');
     }
     
     // Fallback to Unsplash (or if no Bing key, or generic content)
