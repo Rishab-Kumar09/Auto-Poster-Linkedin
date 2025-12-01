@@ -4,44 +4,98 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * Extract keywords from generated post text
+ * Analyze post content and generate smart image search query
  * @param {string} postText - The generated post text
- * @returns {Array} Array of keywords
+ * @returns {string} Smart search query for images
  */
-function extractKeywordsFromPost(postText) {
-  if (!postText) return [];
+function analyzePostForImageSearch(postText) {
+  if (!postText) return 'technology workspace';
   
   const text = postText.toLowerCase();
   
-  // Common stop words to ignore
-  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'which', 'who', 'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very']);
+  // PRIORITY 1: Check for specific AI models/tools mentioned
+  // These should get their actual branded images
+  const specificTools = [
+    { pattern: /claude\s*(3\.5|3|ai)?/i, search: 'Claude AI Anthropic' },
+    { pattern: /gpt-4|gpt4|chatgpt/i, search: 'OpenAI ChatGPT GPT-4' },
+    { pattern: /gemini\s*(pro)?/i, search: 'Google Gemini AI' },
+    { pattern: /copilot/i, search: 'GitHub Copilot coding' },
+    { pattern: /cursor\s*(ai|editor)?/i, search: 'Cursor AI code editor' },
+    { pattern: /replit/i, search: 'Replit coding AI' },
+    { pattern: /llama\s*\d*/i, search: 'Meta Llama AI model' },
+    { pattern: /mistral/i, search: 'Mistral AI model' },
+    { pattern: /anthropic/i, search: 'Anthropic Claude AI' },
+    { pattern: /openai/i, search: 'OpenAI artificial intelligence' },
+  ];
   
-  // Extract words (alphanumeric + hyphens)
-  const words = text.match(/\b[\w-]+\b/g) || [];
-  
-  // Count word frequency
-  const wordCount = {};
-  words.forEach(word => {
-    if (word.length > 3 && !stopWords.has(word)) {
-      wordCount[word] = (wordCount[word] || 0) + 1;
+  // Check if any specific tool is mentioned
+  for (const tool of specificTools) {
+    if (tool.pattern.test(text)) {
+      console.log(`🎯 Specific tool detected: ${tool.search}`);
+      return tool.search;
     }
+  }
+  
+  // PRIORITY 2: Detect main themes and map to visual concepts
+  const themePatterns = [
+    // AI + Coding (most specific)
+    { 
+      keywords: ['ai code', 'ai coding', 'code assistant', 'code generation', 'ai developer'],
+      search: 'artificial intelligence coding software development',
+      score: 0
+    },
+    // AI/ML themes
+    { 
+      keywords: ['ai', 'artificial intelligence', 'machine learning', 'neural network', 'llm', 'model'],
+      search: 'artificial intelligence technology neural',
+      score: 0
+    },
+    // Coding/Programming themes
+    { 
+      keywords: ['code', 'coding', 'programming', 'developer', 'software', 'debug', 'function', 'api'],
+      search: 'programming code screen developer',
+      score: 0
+    },
+    // Productivity/Workflow
+    { 
+      keywords: ['productivity', 'workflow', 'automation', 'efficient', 'optimize'],
+      search: 'minimal workspace productivity setup',
+      score: 0
+    },
+    // Architecture/System Design
+    { 
+      keywords: ['architecture', 'system', 'design pattern', 'structure', 'scalable'],
+      search: 'software architecture technology',
+      score: 0
+    },
+    // Data/Analytics
+    { 
+      keywords: ['data', 'analytics', 'visualization', 'dashboard'],
+      search: 'data visualization dashboard',
+      score: 0
+    }
+  ];
+  
+  // Score each theme based on keyword matches
+  themePatterns.forEach(theme => {
+    theme.keywords.forEach(keyword => {
+      if (text.includes(keyword)) {
+        theme.score += keyword.split(' ').length; // Multi-word matches score higher
+      }
+    });
   });
   
-  // Boost certain tech/AI keywords
-  const boostKeywords = ['ai', 'artificial intelligence', 'coding', 'programming', 'developer', 'software', 'machine learning', 'automation', 'productivity', 'startup', 'technology', 'code', 'algorithm', 'data', 'llm', 'gpt', 'claude', 'openai', 'tools', 'development'];
+  // Find highest scoring theme
+  themePatterns.sort((a, b) => b.score - a.score);
   
-  boostKeywords.forEach(keyword => {
-    if (text.includes(keyword)) {
-      wordCount[keyword] = (wordCount[keyword] || 0) + 5; // Boost score
-    }
-  });
+  // If we found a strong match (score > 0), use it
+  if (themePatterns[0].score > 0) {
+    console.log(`🎨 Theme detected: ${themePatterns[0].search} (score: ${themePatterns[0].score})`);
+    return themePatterns[0].search;
+  }
   
-  // Sort by frequency
-  const sortedWords = Object.entries(wordCount)
-    .sort((a, b) => b[1] - a[1])
-    .map(([word]) => word);
-  
-  return sortedWords.slice(0, 5); // Top 5 keywords
+  // Fallback: generic tech workspace
+  return 'modern technology workspace developer';
 }
 
 /**
@@ -58,23 +112,19 @@ export async function fetchImage(topic, postText = null) {
   }
   
   try {
-    // If we have post text, extract keywords from it
+    // If we have post text, use AI analysis to generate smart search query
     let searchQuery = topic;
     
     if (postText) {
-      const keywords = extractKeywordsFromPost(postText);
-      if (keywords.length > 0) {
-        // Combine top keywords for better search
-        searchQuery = keywords.slice(0, 3).join(' ');
-        console.log(`🔍 Using keywords from post: ${searchQuery}`);
-      }
+      searchQuery = analyzePostForImageSearch(postText);
+      console.log(`🔍 Smart search query: ${searchQuery}`);
     }
     
     // Search for multiple images to find best match
     const response = await axios.get('https://api.unsplash.com/search/photos', {
       params: {
         query: searchQuery,
-        per_page: 10, // Get more options
+        per_page: 15, // Get more options for better selection
         orientation: 'landscape',
         content_filter: 'high'
       },
@@ -84,29 +134,18 @@ export async function fetchImage(topic, postText = null) {
     });
     
     if (response.data.results && response.data.results.length > 0) {
-      // Score each image based on relevance to post keywords
-      const keywords = postText ? extractKeywordsFromPost(postText) : [topic];
-      const scoredImages = response.data.results.map(image => {
-        const imageDesc = (image.description || image.alt_description || '').toLowerCase();
-        const imageTags = (image.tags || []).map(t => t.title.toLowerCase()).join(' ');
-        const combinedText = imageDesc + ' ' + imageTags;
-        
-        // Score based on keyword matches
-        let score = 0;
-        keywords.forEach((keyword, index) => {
-          if (combinedText.includes(keyword)) {
-            score += (5 - index); // Higher score for more important keywords
-          }
-        });
-        
-        return { image, score };
+      // Pick a high-quality image (prefer higher ranked results)
+      // Unsplash already ranks by relevance, so first few are usually best
+      const topImages = response.data.results.slice(0, 5);
+      
+      // Pick one with good quality metrics
+      const bestImage = topImages.reduce((best, current) => {
+        const currentScore = (current.likes || 0) + (current.downloads || 0) / 10;
+        const bestScore = (best.likes || 0) + (best.downloads || 0) / 10;
+        return currentScore > bestScore ? current : best;
       });
       
-      // Sort by score and pick best match
-      scoredImages.sort((a, b) => b.score - a.score);
-      const bestImage = scoredImages[0].image;
-      
-      console.log(`✅ Best matching image score: ${scoredImages[0].score}`);
+      console.log(`✅ Selected image: ${bestImage.alt_description || 'tech image'}`);
       
       return {
         url: bestImage.urls.regular,
