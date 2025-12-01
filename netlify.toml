@@ -13,8 +13,8 @@
 # Functions configuration
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
-  included_files = ["../backend/**"]
+  node_bundler = "nft"
+  included_files = ["../backend/**", "../node_modules/**"]
 
 # Redirects for API calls
 [[redirects]]
