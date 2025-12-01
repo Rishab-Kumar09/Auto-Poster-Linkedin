@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Track used image URLs to avoid duplicates in same session
+const usedImages = new Set();
+
 /**
  * Analyze post content and generate smart image search query
  * @param {string} postText - The generated post text
@@ -99,33 +102,117 @@ function analyzePostForImageSearch(postText) {
 }
 
 /**
+ * Search for images using Bing Image Search API (better for product images)
+ * @param {string} query - Search query
+ * @returns {Promise<Object>} Image data or null
+ */
+async function searchBingImages(query) {
+  if (!process.env.BING_IMAGE_SEARCH_KEY) {
+    return null; // Fallback to Unsplash
+  }
+  
+  try {
+    const response = await axios.get('https://api.bing.microsoft.com/v7.0/images/search', {
+      params: {
+        q: query,
+        count: 10,
+        imageType: 'Photo',
+        license: 'Any', // Get any license type for variety
+        safeSearch: 'Strict'
+      },
+      headers: {
+        'Ocp-Apim-Subscription-Key': process.env.BING_IMAGE_SEARCH_KEY
+      }
+    });
+    
+    if (response.data.value && response.data.value.length > 0) {
+      // Pick a random from top 5 results for variety
+      const topResults = response.data.value.slice(0, 5);
+      const randomIndex = Math.floor(Math.random() * topResults.length);
+      const image = topResults[randomIndex];
+      
+      // Filter out duplicate images
+      if (!usedImages.has(image.contentUrl)) {
+        usedImages.add(image.contentUrl);
+        
+        console.log(`✅ Bing image found: ${image.name}`);
+        
+        return {
+          url: image.contentUrl,
+          downloadUrl: image.contentUrl,
+          photographer: image.hostPageDisplayUrl || 'Web',
+          photographerUrl: image.hostPageUrl,
+          description: image.name
+        };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn('Bing Image Search failed:', error.message);
+    return null; // Fallback to Unsplash
+  }
+}
+
+/**
  * Fetch relevant image from Unsplash based on topic and post content
  * @param {string} topic - Topic to search for
  * @param {string} postText - The generated post text (optional)
  * @returns {Promise<Object>} Image data with URL and metadata
  */
 export async function fetchImage(topic, postText = null) {
-  // If no Unsplash key, return null (posts will work without images)
-  if (!process.env.UNSPLASH_ACCESS_KEY) {
-    console.warn('⚠️  Unsplash API key not found, posting without image');
-    return null;
-  }
-  
   try {
-    // If we have post text, use AI analysis to generate smart search query
+    // If we have post text, analyze it for smart search
     let searchQuery = topic;
+    let usesBingForSpecificTool = false;
     
     if (postText) {
       searchQuery = analyzePostForImageSearch(postText);
       console.log(`🔍 Smart search query: "${searchQuery}"`);
       console.log(`📝 Post preview: ${postText.slice(0, 100)}...`);
+      
+      // Check if this is a specific AI tool/model that should use Bing
+      const specificToolPatterns = [
+        /claude/i, /gpt-?4/i, /chatgpt/i, /gemini/i, /copilot/i, 
+        /cursor/i, /replit/i, /llama/i, /mistral/i, /openai/i, /anthropic/i
+      ];
+      
+      usesBingForSpecificTool = specificToolPatterns.some(pattern => pattern.test(postText));
     }
     
-    // Search for multiple images to find best match
+    // Try Bing first if it's a specific tool AND we have Bing API key
+    if (usesBingForSpecificTool && process.env.BING_IMAGE_SEARCH_KEY) {
+      console.log('🔎 Using Bing Image Search for specific tool/product...');
+      const bingResult = await searchBingImages(searchQuery);
+      if (bingResult) {
+        return bingResult;
+      }
+      console.log('⚠️ Bing search failed, falling back to Unsplash...');
+    }
+    
+    // Fallback to Unsplash (or if no Bing key, or generic content)
+    if (!process.env.UNSPLASH_ACCESS_KEY) {
+      console.warn('⚠️  No image API keys found, posting without image');
+      return null;
+    }
+    
+    console.log('📸 Using Unsplash for image...');
+    
+    // Add variety to search query with random variations
+    const variations = [
+      searchQuery,
+      searchQuery + ' technology',
+      searchQuery + ' digital',
+      searchQuery + ' modern'
+    ];
+    const finalQuery = variations[Math.floor(Math.random() * variations.length)];
+    console.log(`🔍 Final Unsplash query: "${finalQuery}"`);
+    
+    // Search Unsplash
     const response = await axios.get('https://api.unsplash.com/search/photos', {
       params: {
-        query: searchQuery,
-        per_page: 15, // Get more options for better selection
+        query: finalQuery,
+        per_page: 15,
         orientation: 'landscape',
         content_filter: 'high'
       },
@@ -135,15 +222,26 @@ export async function fetchImage(topic, postText = null) {
     });
     
     if (response.data.results && response.data.results.length > 0) {
-      // Pick from top 10 results with variety
       const topImages = response.data.results.slice(0, 10);
       
-      // Add randomization to get variety (but still from high-quality top results)
-      // Pick a random image from top 5-10 results to avoid always using the same image
-      const randomIndex = Math.floor(Math.random() * Math.min(5, topImages.length));
-      const selectedImage = topImages[randomIndex];
+      // Pick random from available images, avoid duplicates
+      let selectedImage = null;
+      for (let i = 0; i < topImages.length; i++) {
+        const candidate = topImages[Math.floor(Math.random() * topImages.length)];
+        if (!usedImages.has(candidate.urls.regular)) {
+          selectedImage = candidate;
+          usedImages.add(candidate.urls.regular);
+          break;
+        }
+      }
       
-      console.log(`✅ Selected image ${randomIndex + 1}/${topImages.length}: ${selectedImage.alt_description || 'tech image'}`);
+      // If all are used, just pick random anyway
+      if (!selectedImage) {
+        const randomIndex = Math.floor(Math.random() * topImages.length);
+        selectedImage = topImages[randomIndex];
+      }
+      
+      console.log(`✅ Unsplash image selected: ${selectedImage.alt_description || 'tech image'}`);
       
       return {
         url: selectedImage.urls.regular,
@@ -154,10 +252,10 @@ export async function fetchImage(topic, postText = null) {
       };
     }
     
-    console.warn(`⚠️  No images found for: ${searchQuery}`);
+    console.warn(`⚠️  No images found for: ${finalQuery}`);
     return null;
   } catch (error) {
-    console.error('Error fetching image from Unsplash:', error.message);
+    console.error('Error fetching image:', error.message);
     return null;
   }
 }
