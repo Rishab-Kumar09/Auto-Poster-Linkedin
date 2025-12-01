@@ -57,9 +57,15 @@ async function fetchNews(topic) {
   }
   
   try {
+    // Get date from 7 days ago for recent news only
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fromDate = sevenDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    
     const response = await axios.get('https://newsapi.org/v2/everything', {
       params: {
         q: topic,
+        from: fromDate,
         sortBy: 'publishedAt',
         language: 'en',
         pageSize: 5,
@@ -117,13 +123,19 @@ async function fetchYouTube(topic) {
   }
   
   try {
+    // Get date from 30 days ago for recent videos
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const publishedAfter = thirtyDaysAgo.toISOString();
+    
     // Search for videos
     const searchResponse = await axios.get('https://www.googleapis.com/youtube/v3/search', {
       params: {
         part: 'snippet',
         q: topic,
         type: 'video',
-        order: 'viewCount',
+        order: 'date', // Changed from 'viewCount' to 'date' for recent content
+        publishedAfter: publishedAfter,
         maxResults: 3,
         key: process.env.YOUTUBE_API_KEY
       }
