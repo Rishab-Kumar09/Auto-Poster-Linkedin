@@ -104,40 +104,56 @@ EXAMPLES:
 
 **The key:** If you're teaching developers something useful about AI/coding → OK. If you're selling a corporate product → Transform or skip.
 
-Source Content (Use this as the basis for your posts - be SPECIFIC about the news/story):
+🚨 CRITICAL INSTRUCTION - READ THIS CAREFULLY:
+
+YOU MUST USE THE SPECIFIC NEWS STORY BELOW. DO NOT WRITE GENERIC POSTS!
+
+Source Article (THIS IS THE STORY YOU MUST DISCUSS):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Title: ${content.title}
 Content: ${content.content?.slice(0, 1500)}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Tone: ${tone}
 
-Create posts that discuss SPECIFIC industry news, trends, and developments with a developer's perspective:
+MANDATORY REQUIREMENTS:
+1. Your post MUST reference the SPECIFIC story above (mention names, companies, events from the title/content)
+2. If the article mentions "James Cameron" → Your post MUST mention "James Cameron"
+3. If the article mentions a company name → Your post MUST mention that company
+4. If the article mentions a specific AI model → Your post MUST mention that model
+5. If the article mentions a dollar amount → Your post CAN mention that amount
+6. Start your post with the ACTUAL news hook from the article
 
-IMPORTANT: Use the ACTUAL content from the source! If it's about:
-- James Cameron discussing AI actors → Discuss that specific story and its implications
-- A new AI model release → Discuss that specific model and what it means
-- An AI startup raising funds → Discuss that specific development and the trend
-- A technical breakthrough → Discuss that specific breakthrough
+❌ WRONG (Generic): "The capabilities of AI in coding are expanding..."
+✅ RIGHT (Specific): "James Cameron just called AI-generated actors 'horrifying'..."
 
-DON'T be generic! Use the real news story as your hook, then add developer insights.
+❌ WRONG (Generic): "AI startups are raising funds..."
+✅ RIGHT (Specific): "Iambic just raised $100M for AI drug discovery..."
+
+If you write a generic post, you FAILED. Use the ACTUAL news story!
 
 1. TWITTER POST (Under 280 characters)
-   - Lead with the SPECIFIC news/story from the source content
-   - Add your take on what this means for developers/tech
-   - Thought-provoking and educational
+   - FIRST SENTENCE: Mention the SPECIFIC person/company/event from the article
+   - Example: "James Cameron just said..." or "Iambic raised $100M..."
+   - Add your developer take on the implications
    - Use 1-2 emojis maximum
    - NO hashtags
    - NO extra line breaks (single paragraph)
 
 2. TWITTER THREAD (5-7 tweets)
-   - Start with the SPECIFIC news/development from source
-   - Each tweet: unpack different angles and implications
-   - Connect to developer experience and industry trends
+   - TWEET 1: State the SPECIFIC news (person, company, event, quote from article)
+   - TWEETS 2-7: Unpack implications, connect to developer experience
+   - Be concrete about what happened, not generic about trends
    - Educational and thoughtful
    - Format: Tweet 1 | Tweet 2 | Tweet 3... (separated by |)
 
 3. LINKEDIN POST (120-180 words)
-   - Open with the SPECIFIC news/story from the source (be concrete!)
-   - Discuss what this means for developers, the industry, or AI progress
+   - OPENING SENTENCE: Reference the SPECIFIC news with names/details
+     ✅ "James Cameron just called AI-generated actors 'horrifying'..."
+     ✅ "Iambic just raised $100M for AI drug discovery..."
+     ✅ "OpenAI's latest model can now..."
+     ❌ "The capabilities of AI are expanding..." (TOO GENERIC!)
+   - Then discuss what this means for developers/industry
    - Connect to broader trends and patterns
    - Can mention AI models (GPT, Claude, Gemini) and dev tools
    - NEVER mention corporate SaaS products (AWS services, Azure products, etc.)
