@@ -42,6 +42,27 @@ function analyzePostForImageSearch(postText) {
     }
   }
   
+  // PRIORITY 1.5: Check for specific news topics/industries
+  const newsTopics = [
+    { pattern: /james cameron|movie|film|actor|hollywood|entertainment/i, search: 'artificial intelligence entertainment movie film' },
+    { pattern: /drug discovery|pharmaceutical|cancer|medical|biotech|iambic/i, search: 'AI medical research drug discovery laboratory' },
+    { pattern: /laptop|computer hardware|chip|processor|amd|intel|nvidia|hp\s*(omen)?/i, search: 'modern laptop computer technology hardware' },
+    { pattern: /startup.*rais.*fund|funding|investment.*million|venture capital/i, search: 'startup technology investment business' },
+    { pattern: /robotics|robot|automation/i, search: 'robotics automation technology' },
+    { pattern: /self-driving|autonomous vehicle|tesla/i, search: 'autonomous vehicle self driving car' },
+    { pattern: /chatbot|customer service|conversation/i, search: 'AI chatbot customer service technology' },
+    { pattern: /music|audio|voice/i, search: 'AI music audio technology' },
+    { pattern: /image generat|art|midjourney|dall-e|stable diffusion/i, search: 'AI generated art digital creativity' },
+  ];
+  
+  // Check for specific news topics
+  for (const topic of newsTopics) {
+    if (topic.pattern.test(text)) {
+      console.log(`📰 News topic detected: ${topic.search}`);
+      return topic.search;
+    }
+  }
+  
   // PRIORITY 2: Detect main themes and map to visual concepts
   const themePatterns = [
     // AI + Coding (most specific)
