@@ -37,17 +37,29 @@ exports.handler = async (event, context) => {
     const allPosts = [];
     
     for (let i = 0; i < postsToGenerate; i++) {
-      const generated = await generatePosts(content[i], 'groq', 'professional');
-      
-      // Convert to database format (one row per platform)
-      // LinkedIn post
-      const linkedinPost = {
-        platform: 'linkedin',
-        content: generated.linkedin.post
-      };
-      
-      // Add to array
-      allPosts.push(linkedinPost);
+      try {
+        console.log(`🤖 Generating posts with GROQ for content #${i + 1}/${postsToGenerate}...`);
+        const generated = await generatePosts(content[i], 'groq', 'professional');
+        
+        if (!generated || !generated.linkedin || !generated.linkedin.post) {
+          console.error(`❌ Generated post #${i + 1} has invalid structure:`, JSON.stringify(generated));
+          continue; // Skip this post
+        }
+        
+        // Convert to database format (one row per platform)
+        // LinkedIn post
+        const linkedinPost = {
+          platform: 'linkedin',
+          content: generated.linkedin.post
+        };
+        
+        // Add to array
+        allPosts.push(linkedinPost);
+        console.log(`✅ Post #${i + 1} generated successfully`);
+      } catch (err) {
+        console.error(`❌ Error generating post #${i + 1}:`, err.message, err.stack);
+        // Continue with next post instead of failing entirely
+      }
     }
 
     // Fetch images for each post
@@ -70,6 +82,18 @@ exports.handler = async (event, context) => {
       }
     }
 
+    // Check if we generated any posts
+    if (allPosts.length === 0) {
+      console.error('❌ No posts were generated successfully');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          error: 'Failed to generate posts. Content might be filtered out or AI generation failed.'
+        })
+      };
+    }
+
     // Store posts in database
     for (const post of allPosts) {
       await insertPost(
@@ -80,6 +104,8 @@ exports.handler = async (event, context) => {
         post.image_data
       );
     }
+
+    console.log(`✅ Successfully generated and stored ${allPosts.length} posts`);
 
     return {
       statusCode: 200,
