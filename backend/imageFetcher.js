@@ -108,6 +108,10 @@ function analyzePostForImageSearch(postText) {
  */
 async function searchGoogleImages(query) {
   if (!process.env.GOOGLE_SEARCH_API_KEY || !process.env.GOOGLE_SEARCH_ENGINE_ID) {
+    console.warn('⚠️ Google credentials missing:', {
+      hasApiKey: !!process.env.GOOGLE_SEARCH_API_KEY,
+      hasEngineId: !!process.env.GOOGLE_SEARCH_ENGINE_ID
+    });
     return null; // Fallback to Unsplash
   }
   
