@@ -2,8 +2,9 @@
 
 [build]
   # Frontend build
-  command = "cd frontend && npm install && npm run build"
-  publish = "frontend/dist"
+  base = "frontend"
+  command = "npm install && npm run build"
+  publish = "dist"
   
   # Install backend dependencies too
   [build.environment]
@@ -13,7 +14,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  included_files = ["backend/**"]
+  included_files = ["../backend/**"]
 
 # Redirects for API calls
 [[redirects]]
