@@ -1,0 +1,27 @@
+name: Auto Post to Social Media
+
+on:
+  schedule:
+    # Post 4 times per day (UTC times - adjust for your timezone!)
+    # Currently set for: 8am, 12pm, 5pm, 8pm UTC
+    # Adjust these if needed (e.g., EST = UTC-5, so 8am EST = 13:00 UTC)
+    - cron: '0 8 * * *'   # 8am UTC
+    - cron: '0 12 * * *'  # 12pm UTC
+    - cron: '0 17 * * *'  # 5pm UTC
+    - cron: '0 20 * * *'  # 8pm UTC
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  auto-post:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Auto-Post Function
+        run: |
+          curl -X POST https://candid-horse-5531fe.netlify.app/.netlify/functions/auto-post-morning \
+            -H "Content-Type: application/json" \
+            -d '{}'
+          
+      - name: Log completion
+        run: echo "✅ Auto-post completed!"
+

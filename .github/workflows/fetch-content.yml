@@ -1,0 +1,22 @@
+name: Fetch Content Every 6 Hours
+
+on:
+  schedule:
+    # Run every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  fetch-content:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Fetch and Generate Content
+        run: |
+          curl -X POST https://candid-horse-5531fe.netlify.app/.netlify/functions/fetch-content \
+            -H "Content-Type: application/json" \
+            -d '{}'
+          
+      - name: Log completion
+        run: echo "✅ Content fetched and posts generated!"
+

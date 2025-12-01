@@ -16,6 +16,9 @@
   node_bundler = "esbuild"
   external_node_modules = ["@supabase/supabase-js", "groq-sdk", "openai", "@google/generative-ai"]
 
+# Scheduled Functions (runs automatically in cloud!)
+# Note: Scheduled functions work on paid plans, but we'll use GitHub Actions for FREE alternative
+
 # Redirects for API calls
 [[redirects]]
   from = "/api/*"

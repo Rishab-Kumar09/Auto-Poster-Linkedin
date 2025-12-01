@@ -1,0 +1,22 @@
+name: Keep Supabase Database Active
+
+on:
+  schedule:
+    # Ping database once per day at 3am UTC to prevent 7-day pause
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Supabase Database
+        run: |
+          curl -X POST https://candid-horse-5531fe.netlify.app/.netlify/functions/keep-alive \
+            -H "Content-Type: application/json" \
+            -d '{}'
+          
+      - name: Log completion
+        run: echo "✅ Database keep-alive ping sent!"
+
