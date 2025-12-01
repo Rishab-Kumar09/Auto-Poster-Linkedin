@@ -28,28 +28,52 @@ async function analyzePostForImageSearchAI(postText) {
       model: 'llama-3.3-70b-versatile',
       messages: [{
         role: 'user',
-        content: `You are an image search query generator. Analyze this social media post and return a 3-5 word search query for finding the MOST RELEVANT image.
+        content: `You are an intelligent image search assistant. Your job is to analyze a social media post and suggest the PERFECT image search query.
 
+STEP 1: READ & UNDERSTAND THE POST
 POST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${postText}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-RULES:
-- If it mentions a specific AI model/tool (Claude, GPT-4, Copilot, Gemini, Cursor, etc.) → Return the exact tool name (e.g., "Claude AI Anthropic", "GitHub Copilot")
-- If it's about a specific industry (medical, entertainment, robotics, etc.) → Return keywords for that industry (e.g., "AI medical laboratory", "Hollywood film production AI")
-- If it's about hardware/products (laptops, chips) → Return product category (e.g., "gaming laptop technology")
-- If it's about startups/funding → Return "startup technology investment"
-- If it's about coding/development → Return "programming code developer"
-- Be SPECIFIC, not generic!
+STEP 2: ANALYZE THE POST
+Think through these questions:
+- What is the MAIN subject/story? (e.g., James Cameron discussing AI, drug discovery startup, new laptop release)
+- Who are the key people/companies mentioned? (e.g., James Cameron, Iambic, HP)
+- What industry/field is this about? (e.g., entertainment, medical, hardware, coding)
+- What specific product/tool is discussed? (e.g., Claude AI, GitHub Copilot, cancer drugs, gaming laptop)
 
-Return ONLY the search query, nothing else.`
+STEP 3: DETERMINE THE BEST VISUAL
+What image would BEST represent this post?
+- For specific AI tools/models (Claude, GPT-4, Copilot, Gemini) → Use the exact product name for branding
+- For people/celebrities (James Cameron, Elon Musk) → Use their name + industry context
+- For industries (medical, entertainment, robotics) → Use specific industry visuals
+- For products (laptops, chips, hardware) → Use the product category + brand
+- For abstract concepts (coding, startups, investment) → Use the most concrete visual element
+
+STEP 4: GENERATE SEARCH KEYWORDS
+Based on your analysis, what are the 3-5 most important keywords for finding the perfect image?
+
+STEP 5: RETURN YOUR ANSWER
+Format: [search query]
+
+Examples:
+- Post about "James Cameron calls AI actors horrifying" → "James Cameron AI film Hollywood"
+- Post about "Iambic raised $100M for drug discovery" → "AI medical research laboratory pharmaceutical"
+- Post about "HP OMEN laptop with RTX 5070" → "HP OMEN gaming laptop RTX"
+- Post about "Claude 3.5 code understanding" → "Claude AI Anthropic"
+- Post about "GitHub Copilot project context" → "GitHub Copilot coding"
+- Post about "AI startup funding surge" → "startup technology investment business"
+
+Now analyze the post above and return ONLY the search query (3-5 words), nothing else.`
       }],
       temperature: 0.3,
-      max_tokens: 50
+      max_tokens: 100
     });
     
     const query = response.choices[0]?.message?.content?.trim();
     if (query) {
-      console.log(`🤖 AI-generated image query: "${query}"`);
+      console.log(`🧠 AI analyzed post and generated query: "${query}"`);
       return query;
     }
     
