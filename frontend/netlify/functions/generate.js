@@ -32,11 +32,27 @@ exports.handler = async (event, context) => {
     const content = await fetchContent(topics || ['AI', 'Software Development']);
 
     console.log('Generating posts...');
-    const posts = await generatePosts(content, count || 5);
+    // Generate one post set per content item (max 5)
+    const postsToGenerate = Math.min(content.length, count || 5);
+    const allPosts = [];
+    
+    for (let i = 0; i < postsToGenerate; i++) {
+      const generated = await generatePosts(content[i], 'groq', 'professional');
+      
+      // Convert to database format (one row per platform)
+      // LinkedIn post
+      const linkedinPost = {
+        platform: 'linkedin',
+        content: generated.linkedin.post
+      };
+      
+      // Add to array
+      allPosts.push(linkedinPost);
+    }
 
     // Fetch images for each post
     console.log('Fetching images...');
-    for (const post of posts) {
+    for (const post of allPosts) {
       try {
         const imageData = await fetchImage(post.content);
         post.image_url = imageData.url;
@@ -49,7 +65,7 @@ exports.handler = async (event, context) => {
     }
 
     // Store posts in database
-    for (const post of posts) {
+    for (const post of allPosts) {
       await insertPost(
         post.platform,
         post.content,
@@ -64,8 +80,8 @@ exports.handler = async (event, context) => {
       headers,
       body: JSON.stringify({
         message: 'Posts generated successfully',
-        count: posts.length,
-        posts
+        count: allPosts.length,
+        posts: allPosts
       })
     };
   } catch (error) {

@@ -24,11 +24,22 @@ exports.handler = async (event, context) => {
     console.log(`✅ Content fetched: ${content.length} items`);
 
     // Generate posts
-    const posts = await generatePosts(content, postFrequency);
-    console.log(`✅ Posts generated: ${posts.length}`);
+    const postsToGenerate = Math.min(content.length, postFrequency);
+    const allPosts = [];
+    
+    for (let i = 0; i < postsToGenerate; i++) {
+      const generated = await generatePosts(content[i], 'groq', 'professional');
+      
+      // Convert to database format (one row per platform)
+      allPosts.push({
+        platform: 'linkedin',
+        content: generated.linkedin.post
+      });
+    }
+    console.log(`✅ Posts generated: ${allPosts.length}`);
 
     // Fetch images for each post
-    for (const post of posts) {
+    for (const post of allPosts) {
       try {
         const imageData = await fetchImage(post.content);
         post.image_url = imageData.url;
@@ -43,7 +54,7 @@ exports.handler = async (event, context) => {
 
     // Store posts in database
     const status = autoPost ? 'pending' : 'draft';
-    for (const post of posts) {
+    for (const post of allPosts) {
       await insertPost(
         post.platform,
         post.content,
@@ -53,13 +64,13 @@ exports.handler = async (event, context) => {
       );
     }
 
-    console.log(`✅ ${posts.length} posts saved to database with status: ${status}`);
+    console.log(`✅ ${allPosts.length} posts saved to database with status: ${status}`);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: 'Content fetched and posts generated',
-        count: posts.length
+        count: allPosts.length
       })
     };
   } catch (error) {
