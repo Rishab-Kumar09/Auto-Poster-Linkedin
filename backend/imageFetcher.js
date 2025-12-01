@@ -117,7 +117,8 @@ export async function fetchImage(topic, postText = null) {
     
     if (postText) {
       searchQuery = analyzePostForImageSearch(postText);
-      console.log(`🔍 Smart search query: ${searchQuery}`);
+      console.log(`🔍 Smart search query: "${searchQuery}"`);
+      console.log(`📝 Post preview: ${postText.slice(0, 100)}...`);
     }
     
     // Search for multiple images to find best match
@@ -134,25 +135,22 @@ export async function fetchImage(topic, postText = null) {
     });
     
     if (response.data.results && response.data.results.length > 0) {
-      // Pick a high-quality image (prefer higher ranked results)
-      // Unsplash already ranks by relevance, so first few are usually best
-      const topImages = response.data.results.slice(0, 5);
+      // Pick from top 10 results with variety
+      const topImages = response.data.results.slice(0, 10);
       
-      // Pick one with good quality metrics
-      const bestImage = topImages.reduce((best, current) => {
-        const currentScore = (current.likes || 0) + (current.downloads || 0) / 10;
-        const bestScore = (best.likes || 0) + (best.downloads || 0) / 10;
-        return currentScore > bestScore ? current : best;
-      });
+      // Add randomization to get variety (but still from high-quality top results)
+      // Pick a random image from top 5-10 results to avoid always using the same image
+      const randomIndex = Math.floor(Math.random() * Math.min(5, topImages.length));
+      const selectedImage = topImages[randomIndex];
       
-      console.log(`✅ Selected image: ${bestImage.alt_description || 'tech image'}`);
+      console.log(`✅ Selected image ${randomIndex + 1}/${topImages.length}: ${selectedImage.alt_description || 'tech image'}`);
       
       return {
-        url: bestImage.urls.regular,
-        downloadUrl: bestImage.links.download_location,
-        photographer: bestImage.user.name,
-        photographerUrl: bestImage.user.links.html,
-        description: bestImage.description || bestImage.alt_description
+        url: selectedImage.urls.regular,
+        downloadUrl: selectedImage.links.download_location,
+        photographer: selectedImage.user.name,
+        photographerUrl: selectedImage.user.links.html,
+        description: selectedImage.description || selectedImage.alt_description
       };
     }
     
