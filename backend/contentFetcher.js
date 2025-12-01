@@ -79,6 +79,18 @@ async function fetchNews(topic) {
         const content = (article.description || article.content || '').toLowerCase();
         const combined = title + ' ' + content;
         
+        // Filter out POLITICAL content (CRITICAL!)
+        const politicalKeywords = [
+          'trump', 'biden', 'president', 'election', 'congress', 'senate', 'republican', 'democrat', 
+          'political', 'politics', 'government', 'white house', 'administration', 'campaign', 'vote', 'voting',
+          'geopolitical', 'diplomatic', 'sanctions', 'ukraine', 'russia', 'china policy', 'venezuela',
+          'nato', 'military', 'war', 'defense', 'pentagon', 'state department'
+        ];
+        if (politicalKeywords.some(keyword => combined.includes(keyword))) {
+          console.log(`🚫 Filtered political content: ${title}`);
+          return false;
+        }
+        
         // Filter out religious content
         const religiousKeywords = ['bible', 'church', 'prayer', 'faith', 'god', 'jesus', 'christian', 'islam', 'muslim', 'hindu', 'buddhist', 'religion'];
         if (religiousKeywords.some(keyword => combined.includes(keyword))) {
