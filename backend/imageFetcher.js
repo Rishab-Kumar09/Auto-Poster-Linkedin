@@ -6,6 +6,9 @@ dotenv.config();
 // Track used image URLs to avoid duplicates in same session
 const usedImages = new Set();
 
+// Counter to alternate between Google and Unsplash
+let imageCounter = 0;
+
 /**
  * Analyze post content and generate smart image search query
  * @param {string} postText - The generated post text
@@ -129,25 +132,34 @@ async function searchGoogleImages(query) {
     });
     
     if (response.data.items && response.data.items.length > 0) {
-      // Pick a random from top 5 results for variety
-      const topResults = response.data.items.slice(0, 5);
-      const randomIndex = Math.floor(Math.random() * topResults.length);
-      const image = topResults[randomIndex];
+      const topResults = response.data.items.slice(0, 10);
       
-      // Filter out duplicate images
-      if (!usedImages.has(image.link)) {
-        usedImages.add(image.link);
-        
-        console.log(`✅ Google image found: ${image.title}`);
-        
-        return {
-          url: image.link,
-          downloadUrl: image.link,
-          photographer: image.displayLink || 'Web',
-          photographerUrl: image.image.contextLink,
-          description: image.title
-        };
+      // Try to find an unused image
+      let selectedImage = null;
+      for (let i = 0; i < topResults.length; i++) {
+        const candidate = topResults[Math.floor(Math.random() * topResults.length)];
+        if (!usedImages.has(candidate.link)) {
+          selectedImage = candidate;
+          usedImages.add(candidate.link);
+          break;
+        }
       }
+      
+      // If all are used, pick random anyway
+      if (!selectedImage) {
+        const randomIndex = Math.floor(Math.random() * topResults.length);
+        selectedImage = topResults[randomIndex];
+      }
+      
+      console.log(`✅ Google image selected: ${selectedImage.title}`);
+      
+      return {
+        url: selectedImage.link,
+        downloadUrl: selectedImage.link,
+        photographer: selectedImage.displayLink || 'Web',
+        photographerUrl: selectedImage.image.contextLink,
+        description: selectedImage.title
+      };
     }
     
     return null;
@@ -165,27 +177,30 @@ async function searchGoogleImages(query) {
  */
 export async function fetchImage(topic, postText = null) {
   try {
+    // Increment counter for alternating
+    imageCounter++;
+    
     // If we have post text, analyze it for smart search
     let searchQuery = topic;
-    let usesBingForSpecificTool = false;
+    let isSpecificTool = false;
     
     if (postText) {
       searchQuery = analyzePostForImageSearch(postText);
       console.log(`🔍 Smart search query: "${searchQuery}"`);
       console.log(`📝 Post preview: ${postText.slice(0, 100)}...`);
       
-      // Check if this is a specific AI tool/model that should use Bing
+      // Check if this is a specific AI tool/model
       const specificToolPatterns = [
         /claude/i, /gpt-?4/i, /chatgpt/i, /gemini/i, /copilot/i, 
         /cursor/i, /replit/i, /llama/i, /mistral/i, /openai/i, /anthropic/i
       ];
       
-      usesBingForSpecificTool = specificToolPatterns.some(pattern => pattern.test(postText));
+      isSpecificTool = specificToolPatterns.some(pattern => pattern.test(postText));
     }
     
-    // Try Google first if it's a specific tool AND we have Google API key
-    if (usesBingForSpecificTool && process.env.GOOGLE_SEARCH_API_KEY) {
-      console.log('🔎 Using Google Image Search for specific tool/product...');
+    // PRIORITY 1: If specific tool mentioned, ALWAYS use Google
+    if (isSpecificTool && process.env.GOOGLE_SEARCH_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID) {
+      console.log(`🎯 Post #${imageCounter}: Specific tool detected - Using Google Image Search...`);
       const googleResult = await searchGoogleImages(searchQuery);
       if (googleResult) {
         return googleResult;
@@ -193,13 +208,26 @@ export async function fetchImage(topic, postText = null) {
       console.log('⚠️ Google search failed, falling back to Unsplash...');
     }
     
-    // Fallback to Unsplash (or if no Bing key, or generic content)
+    // PRIORITY 2: For generic content, alternate between Google and Unsplash
+    // Odd posts (1, 3, 5...) use Google, Even posts (2, 4, 6...) use Unsplash
+    const useGoogle = (imageCounter % 2 === 1);
+    
+    if (!isSpecificTool && useGoogle && process.env.GOOGLE_SEARCH_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID) {
+      console.log(`🔎 Post #${imageCounter}: Using Google Image Search (alternating pattern)...`);
+      const googleResult = await searchGoogleImages(searchQuery);
+      if (googleResult) {
+        return googleResult;
+      }
+      console.log('⚠️ Google search failed, falling back to Unsplash...');
+    } else if (!isSpecificTool) {
+      console.log(`📸 Post #${imageCounter}: Using Unsplash (alternating pattern)...`);
+    }
+    
+    // Fallback to Unsplash
     if (!process.env.UNSPLASH_ACCESS_KEY) {
       console.warn('⚠️  No image API keys found, posting without image');
       return null;
     }
-    
-    console.log('📸 Using Unsplash for image...');
     
     // Add variety to search query with random variations
     const variations = [
