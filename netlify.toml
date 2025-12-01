@@ -1,0 +1,44 @@
+# Netlify Configuration
+
+[build]
+  # Frontend build
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+  
+  # Install backend dependencies too
+  [build.environment]
+    NODE_VERSION = "18"
+
+# Functions configuration
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = ["backend/**"]
+
+# Scheduled Functions (Cron Jobs)
+# Fetch content every 6 hours
+[[functions."fetch-content".schedule]]
+  cron = "0 */6 * * *"
+
+# Auto-post at 8am, 12pm, 5pm, 8pm (UTC - adjust to your timezone)
+# Note: These times are in UTC. Adjust based on your timezone!
+# Example: If you're EST (UTC-5), 8am EST = 1pm UTC (13:00)
+[[functions."auto-post-morning".schedule]]
+  cron = "0 8 * * *"  # 8am
+
+[[functions."auto-post-noon".schedule]]
+  cron = "0 12 * * *"  # 12pm
+
+[[functions."auto-post-evening".schedule]]
+  cron = "0 17 * * *"  # 5pm
+
+[[functions."auto-post-night".schedule]]
+  cron = "0 20 * * *"  # 8pm
+
+# Redirects for API calls
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+

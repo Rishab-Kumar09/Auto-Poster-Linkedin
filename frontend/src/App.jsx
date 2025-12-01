@@ -22,52 +22,40 @@ function App() {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('/api/posts/pending')
-      setPosts(response.data.posts)
+      const response = await axios.get('/api/posts')
+      const allPosts = response.data
+      // Filter for pending posts only
+      setPosts(allPosts.filter(p => p.status === 'pending'))
+      
+      // Update stats
+      const today = new Date().toDateString()
+      setStats({
+        totalPosts: allPosts.length,
+        pendingPosts: allPosts.filter(p => p.status === 'pending').length,
+        todayPosts: allPosts.filter(p => {
+          const postDate = new Date(p.posted_at || p.created_at).toDateString()
+          return postDate === today && p.status === 'posted'
+        }).length
+      })
     } catch (error) {
       console.error('Error fetching posts:', error)
     }
   }
 
   const fetchStats = async () => {
-    try {
-      const response = await axios.get('/api/analytics')
-      setStats(response.data.stats)
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    }
+    // Stats are now calculated in fetchPosts()
+    await fetchPosts()
   }
 
-  const handleFetchContent = async () => {
+  const handleGenerate = async () => {
     setLoading(true)
     try {
-      const response = await axios.post('/api/fetch-content', {
-        topics: topics.split(',').map(t => t.trim())
+      const response = await axios.post('/api/generate', {
+        topics: topics.split(',').map(t => t.trim()),
+        count: 5
       })
-      showToast(`✅ Fetched ${response.data.count} content items!`)
-      
-      // Generate posts for first item
-      if (response.data.content.length > 0) {
-        await handleGeneratePosts(response.data.content[0])
-      }
-    } catch (error) {
-      showToast('❌ Error fetching content: ' + error.message, 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleGeneratePosts = async (content) => {
-    setLoading(true)
-    try {
-      await axios.post('/api/generate-posts', {
-        content,
-        aiProvider,
-        tone
-      })
-      showToast(`✅ Posts generated with ${aiProvider.toUpperCase()}!`)
+      showToast(`✅ Generated ${response.data.count} posts!`)
       fetchPosts()
-      fetchStats()
     } catch (error) {
       showToast('❌ Error generating posts: ' + error.message, 'error')
     } finally {
@@ -75,16 +63,12 @@ function App() {
     }
   }
 
-  const handlePost = async (postId, platforms, editedContent) => {
+  const handlePost = async (postId) => {
     setLoading(true)
     try {
-      const response = await axios.post(`/api/post/${postId}`, {
-        platforms,
-        editedContent
-      })
+      await axios.post('/api/post-to-social', { postId })
       showToast('✅ Posted successfully!')
       fetchPosts()
-      fetchStats()
     } catch (error) {
       showToast('❌ Error posting: ' + error.message, 'error')
     } finally {
@@ -99,10 +83,9 @@ function App() {
     
     setLoading(true)
     try {
-      await axios.delete(`/api/post/${postId}`)
+      await axios.delete(`/api/delete-post/${postId}`)
       showToast('🗑️ Post deleted!')
       fetchPosts()
-      fetchStats()
     } catch (error) {
       showToast('❌ Error deleting: ' + error.message, 'error')
     } finally {
@@ -113,7 +96,7 @@ function App() {
   const handleRegenerateImage = async (postId) => {
     setLoading(true)
     try {
-      await axios.post(`/api/post/${postId}/regenerate-image`)
+      await axios.post(`/api/new-image/${postId}`)
       showToast('🖼️ New image loaded!')
       fetchPosts()
     } catch (error) {
@@ -184,10 +167,10 @@ function App() {
         <div className="button-group">
           <button
             className="btn btn-primary"
-            onClick={handleFetchContent}
+            onClick={handleGenerate}
             disabled={loading}
           >
-            🔍 Fetch & Generate Content
+            🔍 Generate Posts
           </button>
           <button
             className="btn btn-secondary"
@@ -203,7 +186,7 @@ function App() {
       {posts.length === 0 && !loading && (
         <div className="empty-state">
           <h2>No pending posts</h2>
-          <p>Click "Fetch & Generate Content" to create your first automated posts!</p>
+          <p>Click "Generate Posts" to create your first automated posts!</p>
         </div>
       )}
 
@@ -224,37 +207,15 @@ function App() {
 }
 
 function PostCard({ post, onPost, onDelete, onRegenerateImage, loading }) {
-  const [twitterText, setTwitterText] = useState(post.twitter_post)
-  const [linkedinText, setLinkedinText] = useState(post.linkedin_post)
-  const [selectedPlatforms, setSelectedPlatforms] = useState(['twitter', 'linkedin'])
-
-  const source = post.content_source
+  const [content, setContent] = useState(post.content)
   const imageData = post.image_data ? JSON.parse(post.image_data) : null
-
-  const togglePlatform = (platform) => {
-    setSelectedPlatforms(prev =>
-      prev.includes(platform)
-        ? prev.filter(p => p !== platform)
-        : [...prev, platform]
-    )
-  }
-
-  const handlePost = () => {
-    onPost(post.id, selectedPlatforms, {
-      twitter: twitterText,
-      linkedin: linkedinText
-    })
-  }
 
   return (
     <div className="post-card">
       <div className="post-header">
         <div className="post-source">
-          <h3>{source.title}</h3>
-          <div>
-            <span className="source-badge">{source.source}</span>
-            <span className="source-badge">{source.topic}</span>
-          </div>
+          <span className="source-badge">{post.platform}</span>
+          <span className="source-badge">{new Date(post.created_at).toLocaleString()}</span>
         </div>
       </div>
 
@@ -280,38 +241,15 @@ function PostCard({ post, onPost, onDelete, onRegenerateImage, loading }) {
       <div className="post-content">
         <div className="platform-post">
           <h4>
-            <input
-              type="checkbox"
-              checked={selectedPlatforms.includes('twitter')}
-              onChange={() => togglePlatform('twitter')}
-            />
-            🐦 Twitter
+            {post.platform === 'linkedin' ? '💼 LinkedIn' : '🐦 Twitter'}
           </h4>
           <textarea
-            value={twitterText}
-            onChange={(e) => setTwitterText(e.target.value)}
-            maxLength={280}
-          />
-          <div className={`char-count ${twitterText.length > 260 ? 'warning' : ''} ${twitterText.length > 280 ? 'error' : ''}`}>
-            {twitterText.length}/280
-          </div>
-        </div>
-
-        <div className="platform-post">
-          <h4>
-            <input
-              type="checkbox"
-              checked={selectedPlatforms.includes('linkedin')}
-              onChange={() => togglePlatform('linkedin')}
-            />
-            💼 LinkedIn
-          </h4>
-          <textarea
-            value={linkedinText}
-            onChange={(e) => setLinkedinText(e.target.value)}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={6}
           />
           <div className="char-count">
-            {linkedinText.length} characters
+            {content.length} characters
           </div>
         </div>
       </div>
@@ -326,10 +264,10 @@ function PostCard({ post, onPost, onDelete, onRegenerateImage, loading }) {
         </button>
         <button
           className="btn btn-success"
-          onClick={handlePost}
-          disabled={loading || selectedPlatforms.length === 0}
+          onClick={() => onPost(post.id)}
+          disabled={loading}
         >
-          📤 Post to {selectedPlatforms.length} platform(s)
+          📤 Post to {post.platform}
         </button>
       </div>
     </div>
