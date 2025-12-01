@@ -2,6 +2,7 @@
   "name": "social-media-automation",
   "version": "1.0.0",
   "description": "AI-powered social media content automation for fast growth",
+  "type": "commonjs",
   "scripts": {
     "dev": "node backend/server.js",
     "fetch": "node backend/contentFetcher.js",
