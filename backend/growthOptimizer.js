@@ -1,4 +1,4 @@
-import { getDatabase } from './database.js';
+// Database handled by calling functions, not by growthOptimizer itself
 
 /**
  * Growth Optimization Features for Rapid Follower Growth

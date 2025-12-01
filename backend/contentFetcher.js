@@ -2,7 +2,7 @@ import axios from 'axios';
 import { YoutubeTranscript } from 'youtube-transcript';
 import snoowrap from 'snoowrap';
 import dotenv from 'dotenv';
-import { getDatabase } from './database.js';
+// Database handled by calling functions, not by contentFetcher itself
 
 dotenv.config();
 

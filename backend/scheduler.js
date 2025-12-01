@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { fetchContent } from './contentFetcher.js';
 import { generatePosts } from './aiGenerator.js';
 import { postToTwitter, postToLinkedIn, checkPostingLimits } from './autoPost.js';
-import { getDatabase } from './database.js';
+// Database not used in scheduler (functions handle their own DB connections)
 import { fetchImage, getImageKeywords } from './imageFetcher.js';
 import dotenv from 'dotenv';
 

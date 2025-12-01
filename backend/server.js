@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { fetchContent } from './contentFetcher.js';
 import { generatePosts } from './aiGenerator.js';
 import { postToTwitter, postToLinkedIn } from './autoPost.js';
-import { getDatabase, initDatabase } from './database.js';
+import { initDatabase } from './supabase.js';
 import { fetchImage, getImageKeywords } from './imageFetcher.js';
 import axios from 'axios';
 import { 
