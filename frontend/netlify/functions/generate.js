@@ -54,9 +54,15 @@ exports.handler = async (event, context) => {
     console.log('Fetching images...');
     for (const post of allPosts) {
       try {
-        const imageData = await fetchImage(post.content);
-        post.image_url = imageData.url;
-        post.image_data = JSON.stringify(imageData);
+        // Pass post content as SECOND parameter for keyword analysis
+        const imageData = await fetchImage('technology', post.content);
+        if (imageData) {
+          post.image_url = imageData.url;
+          post.image_data = JSON.stringify(imageData);
+        } else {
+          post.image_url = null;
+          post.image_data = null;
+        }
       } catch (err) {
         console.error('Error fetching image:', err);
         post.image_url = null;

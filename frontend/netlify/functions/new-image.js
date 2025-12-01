@@ -45,8 +45,16 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Fetch new image
-    const imageData = await fetchImage(post.content);
+    // Fetch new image - pass post content as SECOND parameter for analysis
+    const imageData = await fetchImage('technology', post.content);
+
+    if (!imageData) {
+      return {
+        statusCode: 404,
+        headers,
+        body: JSON.stringify({ error: 'No suitable image found' })
+      };
+    }
 
     // Update post with new image
     await updatePostImage(parseInt(postId), imageData.url, JSON.stringify(imageData));
