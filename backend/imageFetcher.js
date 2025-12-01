@@ -1,7 +1,11 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import Groq from 'groq-sdk';
 
 dotenv.config();
+
+// Initialize Groq for AI-powered image analysis
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Track used image URLs to avoid duplicates in same session
 const usedImages = new Set();
@@ -10,7 +14,54 @@ const usedImages = new Set();
 let imageCounter = 0;
 
 /**
- * Analyze post content and generate smart image search query
+ * Use AI to analyze post and generate smart image search query
+ * @param {string} postText - The generated post text
+ * @returns {Promise<string>} Smart search query for images
+ */
+async function analyzePostForImageSearchAI(postText) {
+  if (!postText || !process.env.GROQ_API_KEY) {
+    return null;
+  }
+  
+  try {
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{
+        role: 'user',
+        content: `You are an image search query generator. Analyze this social media post and return a 3-5 word search query for finding the MOST RELEVANT image.
+
+POST:
+${postText}
+
+RULES:
+- If it mentions a specific AI model/tool (Claude, GPT-4, Copilot, Gemini, Cursor, etc.) → Return the exact tool name (e.g., "Claude AI Anthropic", "GitHub Copilot")
+- If it's about a specific industry (medical, entertainment, robotics, etc.) → Return keywords for that industry (e.g., "AI medical laboratory", "Hollywood film production AI")
+- If it's about hardware/products (laptops, chips) → Return product category (e.g., "gaming laptop technology")
+- If it's about startups/funding → Return "startup technology investment"
+- If it's about coding/development → Return "programming code developer"
+- Be SPECIFIC, not generic!
+
+Return ONLY the search query, nothing else.`
+      }],
+      temperature: 0.3,
+      max_tokens: 50
+    });
+    
+    const query = response.choices[0]?.message?.content?.trim();
+    if (query) {
+      console.log(`🤖 AI-generated image query: "${query}"`);
+      return query;
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn('⚠️ AI image analysis failed:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Analyze post content and generate smart image search query (FALLBACK)
  * @param {string} postText - The generated post text
  * @returns {string} Smart search query for images
  */
@@ -42,28 +93,7 @@ function analyzePostForImageSearch(postText) {
     }
   }
   
-  // PRIORITY 1.5: Check for specific news topics/industries
-  const newsTopics = [
-    { pattern: /james cameron|movie|film|actor|hollywood|entertainment/i, search: 'artificial intelligence entertainment movie film' },
-    { pattern: /drug discovery|pharmaceutical|cancer|medical|biotech|iambic/i, search: 'AI medical research drug discovery laboratory' },
-    { pattern: /laptop|computer hardware|chip|processor|amd|intel|nvidia|hp\s*(omen)?/i, search: 'modern laptop computer technology hardware' },
-    { pattern: /startup.*rais.*fund|funding|investment.*million|venture capital/i, search: 'startup technology investment business' },
-    { pattern: /robotics|robot|automation/i, search: 'robotics automation technology' },
-    { pattern: /self-driving|autonomous vehicle|tesla/i, search: 'autonomous vehicle self driving car' },
-    { pattern: /chatbot|customer service|conversation/i, search: 'AI chatbot customer service technology' },
-    { pattern: /music|audio|voice/i, search: 'AI music audio technology' },
-    { pattern: /image generat|art|midjourney|dall-e|stable diffusion/i, search: 'AI generated art digital creativity' },
-  ];
-  
-  // Check for specific news topics
-  for (const topic of newsTopics) {
-    if (topic.pattern.test(text)) {
-      console.log(`📰 News topic detected: ${topic.search}`);
-      return topic.search;
-    }
-  }
-  
-  // PRIORITY 2: Detect main themes and map to visual concepts
+  // PRIORITY 2: Detect main themes and map to visual concepts (FALLBACK if AI fails)
   const themePatterns = [
     // AI + Coding (most specific)
     { 
@@ -206,7 +236,15 @@ export async function fetchImage(topic, postText = null) {
     let isSpecificTool = false;
     
     if (postText) {
-      searchQuery = analyzePostForImageSearch(postText);
+      // Try AI-powered analysis first (SMART!)
+      const aiQuery = await analyzePostForImageSearchAI(postText);
+      if (aiQuery) {
+        searchQuery = aiQuery;
+      } else {
+        // Fall back to pattern matching
+        searchQuery = analyzePostForImageSearch(postText);
+      }
+      
       console.log(`🔍 Smart search query: "${searchQuery}"`);
       console.log(`📝 Post preview: ${postText.slice(0, 100)}...`);
       
