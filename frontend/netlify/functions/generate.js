@@ -32,8 +32,8 @@ exports.handler = async (event, context) => {
     const content = await fetchContent(topics || ['AI', 'Software Development']);
 
     console.log('Generating posts...');
-    // Generate one post set per content item (max 5)
-    const postsToGenerate = Math.min(content.length, count || 5);
+    // Generate one post set per content item (max 3 to avoid timeout)
+    const postsToGenerate = Math.min(content.length, count || 3);
     const allPosts = [];
     
     for (let i = 0; i < postsToGenerate; i++) {
@@ -80,11 +80,10 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // Fetch images for each post
-    console.log('Fetching images...');
-    for (const post of allPosts) {
+    // Fetch images for all posts in parallel (faster!)
+    console.log('Fetching images in parallel...');
+    await Promise.all(allPosts.map(async (post) => {
       try {
-        // Pass post content as SECOND parameter for keyword analysis
         const imageData = await fetchImage('technology', post.content);
         if (imageData) {
           post.image_url = imageData.url;
@@ -98,7 +97,7 @@ exports.handler = async (event, context) => {
         post.image_url = null;
         post.image_data = null;
       }
-    }
+    }));
 
     // Check if we generated any posts
     if (allPosts.length === 0) {

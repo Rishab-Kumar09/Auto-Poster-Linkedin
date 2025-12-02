@@ -173,7 +173,7 @@ async function fetchNews(topic) {
         from: fromDate,
         sortBy: 'publishedAt',
         language: 'en',
-        pageSize: 5,
+        pageSize: 3,  // Reduced from 5 to 3 for faster fetch
         apiKey: process.env.NEWS_API_KEY
       }
     });

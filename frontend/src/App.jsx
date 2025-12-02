@@ -52,7 +52,7 @@ function App() {
     try {
       const response = await axios.post('/api/generate', {
         topics: topics.split(',').map(t => t.trim()),
-        count: 5
+        count: 3  // Reduced from 5 to 3 to avoid timeout
       })
       showToast(`✅ Generated ${response.data.count} posts!`)
       fetchPosts()
