@@ -1,6 +1,6 @@
 // Netlify Scheduled Function: Auto-Post (8pm)
 const { postToLinkedIn, postToX } = require('../../../backend/autoPost');
-const { getPostsByStatus, updatePostStatus } = require('../../../backend/supabase');
+const { getScheduledPosts, updatePostStatus } = require('../../../backend/supabase');
 
 exports.handler = async (event, context) => {
   console.log('📤 Scheduled: Auto-posting (8am slot)...');
@@ -20,16 +20,18 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Get one pending post for each platform
+    // Get posts that are scheduled to post now
     let posted = 0;
     for (const platform of platforms) {
-      const posts = await getPostsByStatus('pending');
-      const post = posts.find(p => p.platform === platform);
+      const posts = await getScheduledPosts(platform);
+      const post = posts[0]; // Get first scheduled post for this platform
 
       if (!post) {
-        console.log(`⚠️ No pending posts for ${platform}`);
+        console.log(`⚠️ No scheduled posts for ${platform} at this time`);
         continue;
       }
+
+      console.log(`📅 Posting scheduled post #${post.id} to ${platform}`);
 
       // Parse image data
       let imageData = null;

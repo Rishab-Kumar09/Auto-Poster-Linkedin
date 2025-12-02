@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS posts (
   status TEXT DEFAULT 'pending',
   image_url TEXT,
   image_data TEXT,
+  scheduled_time TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   posted_at TIMESTAMP WITH TIME ZONE
 );
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE INDEX idx_posts_status ON posts(status);
 CREATE INDEX idx_posts_platform ON posts(platform);
 CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
+CREATE INDEX idx_posts_scheduled_time ON posts(scheduled_time);
       `);
     } else {
       console.log('✅ Database connection successful');
@@ -56,7 +58,7 @@ CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
 }
 
 // Insert a new post
-async function insertPost(platform, content, status = 'pending', imageUrl = null, imageData = null) {
+async function insertPost(platform, content, status = 'pending', imageUrl = null, imageData = null, scheduledTime = null) {
   if (!supabase) throw new Error('Supabase not initialized');
 
   const { data, error } = await supabase
@@ -66,7 +68,8 @@ async function insertPost(platform, content, status = 'pending', imageUrl = null
       content,
       status,
       image_url: imageUrl,
-      image_data: imageData
+      image_data: imageData,
+      scheduled_time: scheduledTime
     }])
     .select();
 
@@ -153,13 +156,51 @@ async function updatePostImage(id, imageUrl, imageData) {
 async function deletePost(id) {
   if (!supabase) throw new Error('Supabase not initialized');
 
-  const { error } = await supabase
+  const { error} = await supabase
     .from('posts')
     .delete()
     .eq('id', id);
 
   if (error) throw error;
   return true;
+}
+
+// Update post scheduled time
+async function updateScheduledTime(id, scheduledTime) {
+  if (!supabase) throw new Error('Supabase not initialized');
+
+  const { data, error } = await supabase
+    .from('posts')
+    .update({ scheduled_time: scheduledTime })
+    .eq('id', id)
+    .select();
+
+  if (error) throw error;
+  return data[0];
+}
+
+// Get posts that are scheduled to be posted now
+async function getScheduledPosts(platform = null) {
+  if (!supabase) throw new Error('Supabase not initialized');
+
+  const now = new Date().toISOString();
+  
+  let query = supabase
+    .from('posts')
+    .select('*')
+    .eq('status', 'pending')
+    .not('scheduled_time', 'is', null)
+    .lte('scheduled_time', now)
+    .order('scheduled_time', { ascending: true });
+
+  if (platform) {
+    query = query.eq('platform', platform);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+  return data;
 }
 
 module.exports = {
@@ -171,6 +212,8 @@ module.exports = {
   getPostById,
   updatePostStatus,
   updatePostImage,
+  updateScheduledTime,
+  getScheduledPosts,
   deletePost
 };
 

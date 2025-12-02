@@ -106,6 +106,19 @@ function App() {
     }
   }
 
+  const handleSchedule = async (postId, scheduledTime) => {
+    setLoading(true)
+    try {
+      await axios.post('/api/schedule-post', { postId, scheduledTime })
+      showToast(scheduledTime ? '📅 Post scheduled!' : '🚫 Schedule cleared!')
+      fetchPosts()
+    } catch (error) {
+      showToast('❌ Error scheduling: ' + error.message, 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="app">
       {toast && (
@@ -198,6 +211,7 @@ function App() {
             onPost={handlePost}
             onDelete={handleDelete}
             onRegenerateImage={handleRegenerateImage}
+            onSchedule={handleSchedule}
             loading={loading}
           />
         ))}
@@ -206,9 +220,17 @@ function App() {
   )
 }
 
-function PostCard({ post, onPost, onDelete, onRegenerateImage, loading }) {
+function PostCard({ post, onPost, onDelete, onRegenerateImage, onSchedule, loading }) {
   const [content, setContent] = useState(post.content)
+  const [scheduledTime, setScheduledTime] = useState(
+    post.scheduled_time ? new Date(post.scheduled_time).toISOString().slice(0, 16) : ''
+  )
   const imageData = post.image_data ? JSON.parse(post.image_data) : null
+
+  const handleScheduleChange = (newTime) => {
+    setScheduledTime(newTime)
+    onSchedule(post.id, newTime || null)
+  }
 
   return (
     <div className="post-card">
@@ -216,6 +238,11 @@ function PostCard({ post, onPost, onDelete, onRegenerateImage, loading }) {
         <div className="post-source">
           <span className="source-badge">{post.platform}</span>
           <span className="source-badge">{new Date(post.created_at).toLocaleString()}</span>
+          {post.scheduled_time && (
+            <span className="source-badge scheduled-badge">
+              📅 Scheduled: {new Date(post.scheduled_time).toLocaleString()}
+            </span>
+          )}
         </div>
       </div>
 
@@ -254,6 +281,29 @@ function PostCard({ post, onPost, onDelete, onRegenerateImage, loading }) {
         </div>
       </div>
 
+      <div className="post-schedule">
+        <label htmlFor={`schedule-${post.id}`}>
+          📅 Schedule Post:
+        </label>
+        <input
+          id={`schedule-${post.id}`}
+          type="datetime-local"
+          value={scheduledTime}
+          onChange={(e) => handleScheduleChange(e.target.value)}
+          min={new Date().toISOString().slice(0, 16)}
+          disabled={loading}
+        />
+        {scheduledTime && (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => handleScheduleChange('')}
+            disabled={loading}
+          >
+            🚫 Clear
+          </button>
+        )}
+      </div>
+
       <div className="post-actions">
         <button
           className="btn btn-danger"
@@ -267,7 +317,7 @@ function PostCard({ post, onPost, onDelete, onRegenerateImage, loading }) {
           onClick={() => onPost(post.id)}
           disabled={loading}
         >
-          📤 Post to {post.platform}
+          📤 Post Now
         </button>
       </div>
     </div>
