@@ -46,8 +46,10 @@ exports.handler = async (event, context) => {
       // Post to platform
       try {
         let result;
+        const imageUrl = imageData?.url || null;
+        
         if (platform === 'linkedin') {
-          result = await postToLinkedIn(post.content, imageData);
+          result = await postToLinkedIn(post.content, null, imageUrl);
         } else if (platform === 'x') {
           result = await postToX(post.content, imageData);
         }
