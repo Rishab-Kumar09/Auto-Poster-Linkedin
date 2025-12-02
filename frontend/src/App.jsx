@@ -9,10 +9,19 @@ function App() {
   const [aiProvider, setAiProvider] = useState('groq')
   const [tone, setTone] = useState('professional')
   const [toast, setToast] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [automationSettings, setAutomationSettings] = useState({
+    auto_generate: false,
+    auto_post: false,
+    post_frequency: 4,
+    platforms: ['linkedin'],
+    topics: ['AI', 'Startups', 'Technology']
+  })
 
   useEffect(() => {
     fetchPosts()
     fetchStats()
+    loadSettings()
   }, [])
 
   const showToast = (message, type = 'success') => {
@@ -119,6 +128,32 @@ function App() {
     }
   }
 
+  const loadSettings = async () => {
+    try {
+      const response = await axios.get('/api/get-settings')
+      setAutomationSettings(response.data)
+      // Sync topics with automation settings
+      if (response.data.topics) {
+        setTopics(response.data.topics.join(','))
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error)
+    }
+  }
+
+  const saveSettings = async (newSettings) => {
+    setLoading(true)
+    try {
+      await axios.post('/api/save-settings', newSettings)
+      setAutomationSettings(newSettings)
+      showToast('⚙️ Settings saved!')
+    } catch (error) {
+      showToast('❌ Error saving settings: ' + error.message, 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="app">
       {toast && (
@@ -128,9 +163,27 @@ function App() {
       )}
 
       <div className="header">
-        <h1>🚀 Social Media Automation</h1>
-        <p>AI-powered content generation for Twitter & LinkedIn</p>
+        <div className="header-content">
+          <div>
+            <h1>🚀 Social Media Automation</h1>
+            <p>AI-powered content generation for Twitter & LinkedIn</p>
+          </div>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            ⚙️ Automation Settings
+          </button>
+        </div>
       </div>
+
+      {showSettings && (
+        <AutomationSettings
+          settings={automationSettings}
+          onSave={saveSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
 
       <div className="stats">
         <div className="stat-card">
@@ -319,6 +372,124 @@ function PostCard({ post, onPost, onDelete, onRegenerateImage, onSchedule, loadi
         >
           📤 Post Now
         </button>
+      </div>
+    </div>
+  )
+}
+
+function AutomationSettings({ settings, onSave, onClose }) {
+  const [localSettings, setLocalSettings] = useState(settings)
+
+  const handleSave = () => {
+    onSave(localSettings)
+    onClose()
+  }
+
+  const togglePlatform = (platform) => {
+    const platforms = localSettings.platforms.includes(platform)
+      ? localSettings.platforms.filter(p => p !== platform)
+      : [...localSettings.platforms, platform]
+    setLocalSettings({ ...localSettings, platforms })
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>⚙️ Automation Settings</h2>
+          <button className="btn-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="settings-section">
+          <h3>🤖 Auto-Generation</h3>
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={localSettings.auto_generate}
+              onChange={(e) => setLocalSettings({...localSettings, auto_generate: e.target.checked})}
+            />
+            <span>Automatically generate posts every 6 hours</span>
+          </label>
+          <p className="setting-description">
+            When enabled, the system will fetch content and generate posts automatically.
+          </p>
+        </div>
+
+        <div className="settings-section">
+          <h3>📤 Auto-Posting</h3>
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={localSettings.auto_post}
+              onChange={(e) => setLocalSettings({...localSettings, auto_post: e.target.checked})}
+            />
+            <span>Automatically post scheduled content</span>
+          </label>
+          <p className="setting-description">
+            When enabled, posts with scheduled times will be posted automatically at 8am, 12pm, 5pm, and 8pm daily.
+          </p>
+        </div>
+
+        <div className="settings-section">
+          <h3>📊 Post Frequency</h3>
+          <label>
+            <span>Posts per day:</span>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={localSettings.post_frequency}
+              onChange={(e) => setLocalSettings({...localSettings, post_frequency: parseInt(e.target.value)})}
+            />
+          </label>
+        </div>
+
+        <div className="settings-section">
+          <h3>🌐 Platforms</h3>
+          <div className="platform-toggles">
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={localSettings.platforms.includes('linkedin')}
+                onChange={() => togglePlatform('linkedin')}
+              />
+              <span>💼 LinkedIn</span>
+            </label>
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={localSettings.platforms.includes('x')}
+                onChange={() => togglePlatform('x')}
+              />
+              <span>🐦 X (Twitter)</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h3>📝 Topics</h3>
+          <input
+            type="text"
+            value={localSettings.topics.join(', ')}
+            onChange={(e) => setLocalSettings({
+              ...localSettings,
+              topics: e.target.value.split(',').map(t => t.trim())
+            })}
+            placeholder="AI, Startups, Technology"
+          />
+          <p className="setting-description">
+            Comma-separated list of topics to generate content about.
+          </p>
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn btn-primary" onClick={handleSave}>
+            💾 Save Settings
+          </button>
+        </div>
       </div>
     </div>
   )
